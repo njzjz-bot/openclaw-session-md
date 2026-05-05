@@ -200,11 +200,13 @@ def _render_session(records: list[dict[str, Any]], meta: SessionMeta, options: C
         ts = record.get("timestamp") or record.get("ts")
         if rtype == "message":
             msg = record.get("message") or {}
-            role = str(msg.get("role", "message")).title()
+            role = str(msg.get("role", "message"))
             text = _message_to_markdown(msg, options)
+            if role in {"toolResult", "tool_result", "tool"} and not options.include_tools:
+                continue
             if not text.strip() and not options.include_tools:
                 continue
-            out.extend(_section(role, ts, text))
+            out.extend(_section(_role_title(role), ts, text))
         elif rtype in {"tool_call", "tool_result"}:
             if options.include_tools:
                 out.extend(_section(str(rtype).replace("_", " ").title(), ts, _json_block(record)))
@@ -261,6 +263,7 @@ def _render_trajectory(records: list[dict[str, Any]], meta: SessionMeta, options
 
 
 def _message_to_markdown(message: dict[str, Any], options: ConvertOptions) -> str:
+    role = str(message.get("role", ""))
     content = message.get("content", "")
     if isinstance(content, str):
         return _format_text(content, options)
@@ -274,7 +277,15 @@ def _message_to_markdown(message: dict[str, Any], options: ConvertOptions) -> st
             continue
         ctype = item.get("type")
         if ctype == "text":
+            if role in {"toolResult", "tool_result", "tool"} and not options.include_tools:
+                continue
             parts.append(_format_text(str(item.get("text", "")), options))
+        elif ctype in {"thinking", "reasoning"}:
+            if options.include_tools:
+                thinking = item.get("thinking") or item.get("text") or item.get("content") or ""
+                parts.append(f"<details>\n<summary>Thinking</summary>\n\n{_format_text(str(thinking), options)}\n</details>")
+            else:
+                continue
         elif ctype in {"toolCall", "tool_call"}:
             name = item.get("name", "tool")
             if options.include_tools:
@@ -284,6 +295,8 @@ def _message_to_markdown(message: dict[str, Any], options: ConvertOptions) -> st
         elif ctype in {"toolResult", "tool_result"}:
             if options.include_tools:
                 parts.append(f"<details>\n<summary>Tool result</summary>\n\n{_json_block(item)}\n</details>")
+            else:
+                continue
         elif ctype in {"image", "image_url"}:
             url = item.get("url") or item.get("image_url", {}).get("url") or item.get("path")
             if url:
@@ -316,6 +329,18 @@ def _redact_metadata_blocks(text: str) -> str:
     for pattern in patterns:
         text = re.sub(pattern, "", text, flags=re.DOTALL)
     return text.strip()
+
+
+def _role_title(role: str) -> str:
+    mapping = {
+        "user": "User",
+        "assistant": "Assistant",
+        "system": "System",
+        "toolResult": "Tool Result",
+        "tool_result": "Tool Result",
+        "tool": "Tool Result",
+    }
+    return mapping.get(role, role.replace("_", " ").title())
 
 
 def _section(title: str, ts: str | None, body: str) -> list[str]:
