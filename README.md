@@ -95,7 +95,8 @@ The generated Markdown contains:
 1. a session title;
 2. metadata such as source file, session id, model, timestamps, and event counts;
 3. a transcript/timeline with user and assistant messages;
-4. optional tool details.
+4. per-response token/cost usage when present in the JSONL log;
+5. optional tool details.
 
 The converter is intentionally dependency-free and forgiving: malformed JSONL lines are rendered as parse-error blocks instead of crashing the whole export.
 

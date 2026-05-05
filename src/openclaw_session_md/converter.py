@@ -265,12 +265,16 @@ def _render_trajectory(records: list[dict[str, Any]], meta: SessionMeta, options
 def _message_to_markdown(message: dict[str, Any], options: ConvertOptions) -> str:
     role = str(message.get("role", ""))
     content = message.get("content", "")
+    usage = _usage_from_message(message)
+    usage_prefix = _usage_line(usage) + "\n\n" if usage else ""
     if isinstance(content, str):
-        return _format_text(content, options)
+        return usage_prefix + _format_text(content, options)
     if not isinstance(content, list):
-        return _format_text(str(content), options)
+        return usage_prefix + _format_text(str(content), options)
 
     parts: list[str] = []
+    if usage_prefix:
+        parts.append(usage_prefix.rstrip())
     for item in content:
         if not isinstance(item, dict):
             parts.append(_format_text(str(item), options))
@@ -350,11 +354,33 @@ def _section(title: str, ts: str | None, body: str) -> list[str]:
     return [header, "", body or "_empty_", ""]
 
 
+def _usage_from_message(message: dict[str, Any]) -> dict[str, Any]:
+    usage = message.get("usage")
+    return usage if isinstance(usage, dict) else {}
+
+
 def _usage_line(usage: dict[str, Any]) -> str:
     pieces = []
-    for key in ("input", "output", "cacheRead", "cacheWrite", "total"):
+    for key in (
+        "input",
+        "output",
+        "cacheRead",
+        "cacheWrite",
+        "total",
+        "totalTokens",
+        "prompt_tokens",
+        "completion_tokens",
+        "total_tokens",
+        "input_tokens",
+        "output_tokens",
+    ):
         if key in usage:
             pieces.append(f"{key}={usage[key]}")
+    cost = usage.get("cost")
+    if isinstance(cost, dict) and "total" in cost:
+        pieces.append(f"cost={cost['total']}")
+    elif isinstance(cost, (int, float, str)):
+        pieces.append(f"cost={cost}")
     return "> Usage: " + ", ".join(pieces)
 
 

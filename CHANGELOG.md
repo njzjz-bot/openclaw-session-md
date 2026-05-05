@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Render regular session message token/cost usage from `message.usage` fields.
+
 ## 0.1.0
 
 - Initial release.

@@ -14,6 +14,10 @@ class ConverterTests(unittest.TestCase):
         self.assertIn("### Assistant", md)
         self.assertNotIn("Conversation info", md)
         self.assertIn("Hello", md)
+        self.assertIn("Usage:", md)
+        self.assertIn("input=10", md)
+        self.assertIn("output=3", md)
+        self.assertIn("totalTokens=20", md)
         self.assertEqual(meta.message_count, 2)
 
     def test_convert_trajectory_fixture(self):
