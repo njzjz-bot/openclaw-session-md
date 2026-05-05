@@ -1,0 +1,4 @@
+{"type":"session","version":3,"id":"abc123","timestamp":"2026-05-05T00:00:00Z","cwd":"/tmp/work"}
+{"type":"model_change","id":"m1","parentId":null,"timestamp":"2026-05-05T00:00:01Z","provider":"custom","modelId":"gpt-5.4"}
+{"type":"message","id":"u1","parentId":"m1","timestamp":"2026-05-05T00:00:02Z","message":{"role":"user","content":[{"type":"text","text":"Conversation info (untrusted metadata):\n```json\n{\"message_id\":\"x\"}\n```\n[message_id: x]\nHello"}],"timestamp":1777939202000}}
+{"type":"message","id":"a1","parentId":"u1","timestamp":"2026-05-05T00:00:03Z","message":{"role":"assistant","content":[{"type":"text","text":"Hi there"}],"timestamp":1777939203000}}
